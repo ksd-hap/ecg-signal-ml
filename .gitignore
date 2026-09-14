@@ -21,3 +21,6 @@ data/*.atr
 Thumbs.db
 .vscode/
 .idea/
+
+# Local AI-assistant working rules, kept private
+CLAUDE.md
