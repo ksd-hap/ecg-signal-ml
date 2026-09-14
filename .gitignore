@@ -1,0 +1,23 @@
+# Virtual environment
+venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+
+# Jupyter
+*.egg-info/
+
+# Dataset (fetched via wfdb, never committed — see data/README.md)
+data/mitdb/
+data/*.dat
+data/*.hea
+data/*.atr
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
