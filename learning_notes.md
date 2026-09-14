@@ -7,6 +7,18 @@ finishing each major stage, in my own words.
 This is separate from the project README: the README documents the project
 for an outside reader, this file documents my own learning process.
 
+**How I write an entry:** close the chat first. Answer these from memory,
+then reopen the conversation only to check what I got wrong or forgot —
+that's the point where the entry gets corrected, not co-written.
+
+1. In my own words, what did we build in this stage and why does it exist
+   in the pipeline?
+2. What's one decision here I could defend if someone pushed back on it
+   (e.g. "why this parameter / this approach and not another")?
+3. What's one thing I could NOT yet rebuild or fully explain without help?
+   (This is the honest part — it's fine for this to be non-empty.)
+4. What surprised me, or what would I do differently next time?
+
 ---
 
 ## Stage 1 — Environment & Repository Setup
@@ -30,3 +42,14 @@ What I now understand:
 
 Nothing unexpected went wrong here — this was straightforward once each
 piece's purpose was explained.
+
+---
+
+## Stage 2 — Loading, Inspecting, and Visualizing the First Record
+
+*(fill in from memory, closed-book — see the four questions above)*
+
+1.
+2.
+3.
+4.
