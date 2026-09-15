@@ -49,7 +49,7 @@ piece's purpose was explained.
 
 *(fill in from memory, closed-book — see the four questions above)*
 
-1.
-2.
-3.
-4.
+1. So we got the dataset and loaded it up, then we also had to have all the necessary information that is needed for the data to be useful, such as the sampling frequency, signal length and the number of channels, we also actually plotted the graphs looking at the raw ECG Signal.
+2. I think I could pretty well argue for why we use the sampling frequency we use (Save battery life, memory storage and digital noise)
+3.Im not sure how I would extract the signal.
+4. what surprised me is that even though of course is to be expected, how many different things are required to be knowledgeable about including the likes of technical terms or at least be aware when doing multidisciplinary work.
