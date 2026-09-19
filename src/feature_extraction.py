@@ -1,10 +1,13 @@
 from collections import Counter
+from functools import lru_cache
 
 import numpy as np
 import pandas as pd
 
 from .peak_detection import detect_r_peaks
 from .preprocessing import DEFAULT_DATA_DIR, bandpass_filter, get_ecg_lead, load_record
+
+DEFAULT_TABLE_PATH = DEFAULT_DATA_DIR.parent / "processed" / "beat_features.csv"
 
 # AAMI EC57 grouping of MIT-BIH beat symbols, merged to Normal / Abnormal (see notebooks/05_beat_labeling.ipynb)
 NORMAL_SYMBOLS = {"N", "L", "R", "e", "j"}
@@ -161,6 +164,26 @@ def build_beat_table(record_name, filtered_signal, r_peaks, fs, annotation,
     summary["n_rows"] = len(rows)
     summary["unrecognized_symbols"] = sorted(set(annotation.symbol) - BEAT_SYMBOLS - NON_BEAT_SYMBOLS)
     return pd.DataFrame(rows), summary
+
+
+def load_beat_table(path=DEFAULT_TABLE_PATH):
+    """Load the saved beat table; record ids and symbols are read as strings, never guessed as numbers."""
+    return pd.read_csv(path, dtype={"record": str, "symbol": str, "label": str})
+
+
+@lru_cache(maxsize=None)
+def _filtered_record(record_name):
+    record, _ = load_record(record_name)
+    signal, _ = get_ecg_lead(record)
+    return bandpass_filter(signal, 0.5, 40, record.fs, order=4), record.fs
+
+
+def get_beat_waveform(record_name, r_peak_sample, pre_ms=200, post_ms=400):
+    """(time_ms relative to R peak, filtered waveform) for one beat, for plotting individual beats."""
+    filtered, fs = _filtered_record(record_name)
+    pre = int(round(pre_ms / 1000 * fs))
+    post = int(round(post_ms / 1000 * fs))
+    return np.arange(-pre, post) / fs * 1000, filtered[r_peak_sample - pre:r_peak_sample + post]
 
 
 def process_record(record_name, data_dir=DEFAULT_DATA_DIR, **table_kwargs):
