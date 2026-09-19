@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
-from sklearn.metrics import average_precision_score, confusion_matrix, roc_auc_score
+from sklearn.metrics import average_precision_score, confusion_matrix, f1_score, roc_auc_score
 
 from .feature_extraction import MODEL_FEATURES
+from .preprocessing import load_record
 
 
 def out_of_fold_probabilities(make_model, data, features=MODEL_FEATURES):
@@ -61,3 +62,66 @@ def flagged_rate_by_symbol(data, proba, threshold=0.5):
                                                       flagged=("flagged", "sum"))
     table["pct_flagged_abnormal"] = (100 * table.flagged / table.beats).round(1)
     return table.sort_values(["label", "beats"], ascending=[False, False])
+
+
+def patient_bootstrap(data, proba_a, proba_b, n_boot=500, seed=0):
+    """Resample whole patients with replacement and score two models on each resample.
+
+    Beats within a patient are not independent, so patients (not beats) are the unit that is resampled.
+    Returns one row per replicate with PR-AUC and F1 (threshold 0.5) for models a and b.
+    """
+    part = data.loc[proba_a.index]
+    patients = part["patient"].to_numpy()
+    groups = [np.flatnonzero(patients == p) for p in np.unique(patients)]
+    y, a, b = part["is_abnormal"].to_numpy(), proba_a.to_numpy(), proba_b.to_numpy()
+    rng = np.random.default_rng(seed)
+    rows = []
+    for _ in range(n_boot):
+        idx = np.concatenate([groups[i] for i in rng.integers(0, len(groups), len(groups))])
+        if y[idx].sum() == 0:
+            continue
+        rows.append({
+            "pr_auc_a": average_precision_score(y[idx], a[idx]), "pr_auc_b": average_precision_score(y[idx], b[idx]),
+            "roc_auc_a": roc_auc_score(y[idx], a[idx]), "roc_auc_b": roc_auc_score(y[idx], b[idx]),
+            "f1_a": f1_score(y[idx], a[idx] >= 0.5, zero_division=0), "f1_b": f1_score(y[idx], b[idx] >= 0.5, zero_division=0),
+        })
+    return pd.DataFrame(rows)
+
+
+def permutation_importance_by_fold(make_model, data, features=MODEL_FEATURES, n_repeats=3, seed=0):
+    """How much does each feature matter for patients the model has NOT seen?
+
+    In every cross-validation fold, fit on the other folds, then shuffle one feature at a time in the held-out fold
+    and record the drop in PR-AUC. Development data only; returns features x folds (mean drop over repeats).
+    """
+    dev = data[data.split == "train"]
+    rng = np.random.default_rng(seed)
+    result = {}
+    for fold in sorted(dev.cv_fold.unique()):
+        fit_part, held_out = dev[dev.cv_fold != fold], dev[dev.cv_fold == fold]
+        model = make_model().fit(fit_part[features], fit_part["is_abnormal"])
+        y = held_out["is_abnormal"].to_numpy()
+        base = average_precision_score(y, model.predict_proba(held_out[features])[:, 1])
+        drops = {}
+        for feature in features:
+            scores = []
+            for _ in range(n_repeats):
+                shuffled = held_out[features].copy()
+                shuffled[feature] = rng.permutation(shuffled[feature].to_numpy())
+                scores.append(average_precision_score(y, model.predict_proba(shuffled)[:, 1]))
+            drops[feature] = base - float(np.mean(scores))
+        result[fold] = drops
+    return pd.DataFrame(result)
+
+
+def annotated_rhythm(data):
+    """Rhythm annotation in force at each beat (e.g. '(N' sinus, '(AFIB'). For analysis only - never a model input."""
+    rhythm = pd.Series("(unlabeled", index=data.index)
+    for record, part in data.groupby("record"):
+        _, annotation = load_record(str(record))
+        symbols, samples, notes = np.asarray(annotation.symbol), np.asarray(annotation.sample), np.asarray(annotation.aux_note)
+        is_change = symbols == "+"
+        starts, names = samples[is_change], [n.strip("\x00").strip() for n in notes[is_change]]
+        position = np.searchsorted(starts, part["r_peak_sample"].to_numpy(), side="right") - 1
+        rhythm.loc[part.index] = [names[i] if i >= 0 else "(unlabeled" for i in position]
+    return rhythm

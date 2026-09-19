@@ -1,4 +1,5 @@
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
@@ -39,3 +40,12 @@ def make_logistic_regression(scale=True, class_weight=None, C=1.0):
         steps.append(("scale", StandardScaler()))
     steps.append(("model", LogisticRegression(C=C, class_weight=class_weight, max_iter=1000)))
     return Pipeline(steps)
+
+
+def make_random_forest(class_weight=None, n_estimators=300, random_state=42):
+    """Random forest on the raw features: trees only compare a feature to thresholds, so no scaling or clipping.
+
+    Everything else is left at scikit-learn defaults (fully grown trees, sqrt(n_features) tried per split).
+    """
+    return RandomForestClassifier(n_estimators=n_estimators, class_weight=class_weight,
+                                  random_state=random_state, n_jobs=-1)
