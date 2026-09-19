@@ -125,3 +125,20 @@ def annotated_rhythm(data):
         position = np.searchsorted(starts, part["r_peak_sample"].to_numpy(), side="right") - 1
         rhythm.loc[part.index] = [names[i] if i >= 0 else "(unlabeled" for i in position]
     return rhythm
+
+def patient_bootstrap_metrics(data, proba, n_boot=2000, seed=0, threshold=0.5):
+    """Metrics of one model on patient-level bootstrap resamples (whole patients drawn with replacement)."""
+    part = data.loc[proba.index]
+    patients = part["patient"].to_numpy()
+    groups = [np.flatnonzero(patients == p) for p in np.unique(patients)]
+    y, scores = part["is_abnormal"].to_numpy(), proba.to_numpy()
+    rng = np.random.default_rng(seed)
+    keys = ["accuracy", "precision", "recall", "f1", "false_alarm_rate", "roc_auc", "pr_auc"]
+    rows = []
+    for _ in range(n_boot):
+        idx = np.concatenate([groups[i] for i in rng.integers(0, len(groups), len(groups))])
+        if y[idx].sum() == 0 or y[idx].sum() == len(idx):
+            continue
+        result = summarize(y[idx], scores[idx], threshold)
+        rows.append({k: result[k] for k in keys})
+    return pd.DataFrame(rows)
