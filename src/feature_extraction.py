@@ -23,6 +23,34 @@ FEATURE_COLUMNS = [
 ]
 
 
+# Features used for modelling: the 13 extracted features minus four duplicates found in the EDA
+# (heart_rate_bpm = 60/rr_pre_s; energy_mv2s ~ amp_std; r_amplitude_mv and dominant_deflection_mv ~ amp_max),
+# plus four record-relative versions of the features whose absolute scale depends on the patient.
+RELATIVE_SOURCES = {
+    "rr_pre_rel": "rr_pre_s",
+    "rr_post_rel": "rr_post_s",
+    "qrs_p2p_rel": "qrs_p2p_mv",
+    "amp_std_rel": "amp_std",
+}
+MODEL_FEATURES = [
+    "rr_pre_s", "rr_post_s", "rr_ratio", "rr_pre_rel", "rr_post_rel",
+    "amp_mean", "amp_std", "amp_min", "amp_max", "qrs_p2p_mv", "qrs_fwhm_ms",
+    "qrs_p2p_rel", "amp_std_rel",
+]
+
+
+def add_record_relative_features(table):
+    """Divide selected features by that record's own median, so a patient's scale (heart rate, electrode gain) cancels.
+
+    Uses only the record's own beats and no labels, so it must be computed per record and never across a split:
+    a record lives entirely in train or entirely in test, which keeps this leak-free.
+    """
+    table = table.copy()
+    for new_name, source in RELATIVE_SOURCES.items():
+        table[new_name] = table[source] / table.groupby("record", observed=True)[source].transform("median")
+    return table
+
+
 def map_symbol_to_label(symbol):
     """Map a MIT-BIH annotation symbol to our binary label, or an explicit exclusion reason."""
     if symbol in NORMAL_SYMBOLS:

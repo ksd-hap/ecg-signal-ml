@@ -1,0 +1,67 @@
+{
+  "unit": "patient (recordings 201 and 202 share a patient)",
+  "test_patients": [
+    "116",
+    "118",
+    "119",
+    "209",
+    "215"
+  ],
+  "dev_patients": [
+    "114",
+    "124",
+    "200",
+    "202",
+    "205",
+    "213",
+    "214",
+    "219",
+    "220",
+    "232",
+    "233",
+    "234"
+  ],
+  "cv_folds": [
+    [
+      "114",
+      "213",
+      "219"
+    ],
+    [
+      "124",
+      "205",
+      "232"
+    ],
+    [
+      "200",
+      "202",
+      "214"
+    ],
+    [
+      "220",
+      "233",
+      "234"
+    ]
+  ],
+  "forced_to_train": {
+    "213": [
+      "F"
+    ],
+    "214": [
+      "L"
+    ]
+  },
+  "cv_spread_across_folds": [
+    "213",
+    "214",
+    "232"
+  ],
+  "rules": {
+    "n_test": 5,
+    "n_folds": 4,
+    "target_test_share": 0.3,
+    "max_single_patient_share_of_abnormal": 0.4,
+    "single_source_min_beats": 100,
+    "single_source_min_share": 0.8
+  }
+}
