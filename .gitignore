@@ -12,6 +12,7 @@ __pycache__/
 
 # Dataset (fetched via wfdb, never committed — see data/README.md)
 data/mitdb/
+data/processed/
 data/*.dat
 data/*.hea
 data/*.atr
