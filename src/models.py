@@ -14,6 +14,7 @@ DEFAULT_CLIP_BOUNDS = {
     "rr_ratio": RR_RATIO_BOUNDS,
     "rr_pre_rel": RR_RATIO_BOUNDS,
     "rr_post_rel": RR_RATIO_BOUNDS,
+    "rr_pre_vs_hist": RR_RATIO_BOUNDS,
 }
 
 
@@ -29,7 +30,8 @@ class FixedClipper(BaseEstimator, TransformerMixin):
     def transform(self, X):
         X = X.copy()
         for column, (low, high) in (self.bounds or {}).items():
-            X[column] = X[column].clip(low, high)
+            if column in X.columns:
+                X[column] = X[column].clip(low, high)
         return X
 
 

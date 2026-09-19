@@ -51,6 +51,37 @@ def add_record_relative_features(table):
     return table
 
 
+# Rhythm-context features (defined and pre-registered before any result was seen; see notebook 12).
+RHYTHM_CONTEXT_FEATURES = ["rr_hist_cv", "rr_pre_vs_hist"]
+MODEL_FEATURES_RHYTHM = MODEL_FEATURES + RHYTHM_CONTEXT_FEATURES
+
+
+def add_rhythm_context_features(table, window=8, min_periods=4, bounds=(0.30, 2.0)):
+    """Describe the rhythm *before* each beat, so one premature beat can be told from an irregular rhythm.
+
+    Both features use the `window` RR intervals that precede the beat's own pre-interval (that is, the intervals
+    ending at the previous `window` beats), clipped to fixed physiological bounds:
+      rr_hist_cv     - coefficient of variation (std / mean) of those intervals: high in an irregular rhythm
+      rr_pre_vs_hist - the beat's own pre-interval divided by their mean: well below 1 for a premature beat
+    The first beats of a record have too little history; they get that record's own median. Uses only RR intervals
+    of the same record (no labels, nothing fitted), and the table must be sorted by record and time.
+    """
+    table = table.copy()
+    by_record = table["record"].astype(str)
+    ordered = table.groupby(by_record)["r_peak_sample"].apply(lambda s: s.is_monotonic_increasing)
+    assert ordered.all(), "table must be sorted by time within each record"
+
+    rr = table["rr_pre_s"].clip(*bounds)
+    rolling = rr.groupby(by_record).shift(1).groupby(by_record).rolling(window, min_periods=min_periods)
+    mean = rolling.mean().reset_index(level=0, drop=True).reindex(table.index)
+    std = rolling.std().reset_index(level=0, drop=True).reindex(table.index)
+    table["rr_hist_cv"] = std / mean
+    table["rr_pre_vs_hist"] = rr / mean
+    for name in RHYTHM_CONTEXT_FEATURES:
+        table[name] = table[name].fillna(table.groupby("record", observed=True)[name].transform("median"))
+    return table
+
+
 def map_symbol_to_label(symbol):
     """Map a MIT-BIH annotation symbol to our binary label, or an explicit exclusion reason."""
     if symbol in NORMAL_SYMBOLS:
