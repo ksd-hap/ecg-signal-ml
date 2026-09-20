@@ -1,11 +1,11 @@
+"""From R peaks to a labelled table: label mapping, beat segmentation, per-beat features, the saved beat table."""
 from collections import Counter
-from functools import lru_cache
 
 import numpy as np
 import pandas as pd
 
 from .peak_detection import detect_r_peaks
-from .preprocessing import DEFAULT_DATA_DIR, bandpass_filter, get_ecg_lead, load_record
+from .preprocessing import DEFAULT_DATA_DIR, filter_ecg, get_ecg_lead, load_filtered_record, load_record
 
 DEFAULT_TABLE_PATH = DEFAULT_DATA_DIR.parent / "processed" / "beat_features.csv"
 
@@ -230,16 +230,15 @@ def load_beat_table(path=DEFAULT_TABLE_PATH):
     return pd.read_csv(path, dtype={"record": str, "symbol": str, "label": str})
 
 
-@lru_cache(maxsize=None)
-def _filtered_record(record_name):
-    record, _ = load_record(record_name)
-    signal, _ = get_ecg_lead(record)
-    return bandpass_filter(signal, 0.5, 40, record.fs, order=4), record.fs
+def beat_annotations(annotation):
+    """(sample, symbol) arrays of the annotations that mark beats (dropping rhythm changes, noise flags, etc.)."""
+    is_beat = np.isin(np.asarray(annotation.symbol), list(BEAT_SYMBOLS))
+    return np.asarray(annotation.sample)[is_beat], np.asarray(annotation.symbol)[is_beat]
 
 
 def get_beat_waveform(record_name, r_peak_sample, pre_ms=200, post_ms=400):
     """(time_ms relative to R peak, filtered waveform) for one beat, for plotting individual beats."""
-    filtered, fs = _filtered_record(record_name)
+    filtered, fs = load_filtered_record(record_name)
     pre = int(round(pre_ms / 1000 * fs))
     post = int(round(post_ms / 1000 * fs))
     return np.arange(-pre, post) / fs * 1000, filtered[r_peak_sample - pre:r_peak_sample + post]
@@ -249,6 +248,6 @@ def process_record(record_name, data_dir=DEFAULT_DATA_DIR, **table_kwargs):
     """Full pipeline for one record: load -> filter -> detect R peaks -> segment -> label -> features."""
     record, annotation = load_record(record_name, data_dir)
     signal, _ = get_ecg_lead(record)
-    filtered = bandpass_filter(signal, 0.5, 40, record.fs, order=4)
+    filtered = filter_ecg(signal, record.fs)
     r_peaks = detect_r_peaks(filtered, record.fs)
     return build_beat_table(record_name, filtered, r_peaks, record.fs, annotation, **table_kwargs)

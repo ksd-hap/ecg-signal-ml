@@ -1,3 +1,4 @@
+"""Patient-level train/test split and cross-validation folds (the leakage guard)."""
 import json
 from itertools import combinations
 from pathlib import Path

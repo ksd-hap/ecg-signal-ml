@@ -22,10 +22,10 @@ from scipy.signal import butter, sosfiltfilt
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.evaluation import out_of_fold_probabilities
-from src.feature_extraction import BEAT_SYMBOLS, MODEL_FEATURES, add_record_relative_features, load_beat_table
+from src.feature_extraction import MODEL_FEATURES, beat_annotations, add_record_relative_features, load_beat_table
 from src.models import make_gradient_boosting, make_logistic_regression, make_random_forest
 from src.peak_detection import detect_r_peaks, match_peaks
-from src.preprocessing import bandpass_filter, get_ecg_lead, load_record
+from src.preprocessing import filter_ecg, get_ecg_lead, load_record
 from src.splitting import apply_split, load_split
 
 OUT_DIR = Path("data/processed")
@@ -53,7 +53,7 @@ for record_name in sorted(data.record.unique()):
     record, annotation = load_record(record_name)
     raw, _ = get_ecg_lead(record)
     fs = record.fs
-    filtered = bandpass_filter(raw, 0.5, 40, fs, order=4)
+    filtered = filter_ecg(raw, fs)
     high_freq = raw - sosfiltfilt(butter(4, 40, btype="low", fs=fs, output="sos"), raw)      # content above 40 Hz
     baseline = sosfiltfilt(butter(2, 0.5, btype="low", fs=fs, output="sos"), raw)            # content below 0.5 Hz
 
@@ -66,8 +66,7 @@ for record_name in sorted(data.record.unique()):
         bl = baseline[sample - pre:sample + post]
         noise_rows.append({"index": idx, "hf_noise_mv": hf.std(), "baseline_range_mv": np.ptp(bl)})
 
-    is_beat = np.isin(annotation.symbol, list(BEAT_SYMBOLS))
-    ann_samples, ann_symbols = np.asarray(annotation.sample)[is_beat], np.asarray(annotation.symbol)[is_beat]
+    ann_samples, ann_symbols = beat_annotations(annotation)
     peaks = detect_r_peaks(filtered, fs)
     match = match_peaks(peaks, ann_samples, int(round(0.05 * fs)))
     detected = np.isin(ann_samples, match["tp_annotated"])

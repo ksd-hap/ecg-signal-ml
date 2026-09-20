@@ -1,3 +1,4 @@
+"""Finding R peaks: the simplified Pan-Tompkins stages, the detector, and its validation against annotations."""
 import numpy as np
 from scipy.signal import find_peaks
 
@@ -68,3 +69,12 @@ def match_peaks(detected_peaks, annotated_peaks, tolerance_samples):
         "fp": np.array(fp, dtype=int),
         "fn": np.array(fn, dtype=int),
     }
+
+
+def detection_metrics(match):
+    """TP/FP/FN counts and precision/recall/F1 (0 when undefined) from a `match_peaks` result."""
+    tp, fp, fn = len(match["tp_detected"]), len(match["fp"]), len(match["fn"])
+    precision = tp / (tp + fp) if tp + fp else 0
+    recall = tp / (tp + fn) if tp + fn else 0
+    f1 = 2 * precision * recall / (precision + recall) if precision + recall else 0
+    return {"tp": tp, "fp": fp, "fn": fn, "precision": precision, "recall": recall, "f1": f1}

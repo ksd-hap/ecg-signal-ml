@@ -1,3 +1,4 @@
+"""Model definitions only: preprocessing + classifier pipelines with the settings used in the experiments."""
 from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
 from sklearn.linear_model import LogisticRegression

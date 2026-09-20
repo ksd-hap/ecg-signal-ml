@@ -17,7 +17,8 @@ from sklearn.metrics import average_precision_score, roc_auc_score, roc_curve
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.evaluation import out_of_fold_probabilities, summarize
-from src.feature_extraction import MODEL_FEATURES, _filtered_record
+from src.feature_extraction import MODEL_FEATURES
+from src.preprocessing import load_filtered_record
 from src.models import make_gradient_boosting, make_logistic_regression, make_random_forest
 
 pd.set_option("display.width", 200)
@@ -165,7 +166,7 @@ print("gradient boosting, same grouped CV on the 12 development patients.")
 dev_idx = data.index[data.part == "dev"]
 waves = np.zeros((len(dev_idx), 108))
 for n, (i, row) in enumerate(data.loc[dev_idx].iterrows()):
-    filtered, fs = _filtered_record(row.record)
+    filtered, fs = load_filtered_record(row.record)
     w = filtered[int(row.r_peak_sample) - 72:int(row.r_peak_sample) + 144][::2]
     waves[n] = (w - np.median(w)) / max(row.qrs_p2p_mv, 1e-3)
 wave_cols = [f"w{j}" for j in range(108)]

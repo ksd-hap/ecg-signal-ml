@@ -14,8 +14,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from src.feature_extraction import _filtered_record
-from src.preprocessing import get_ecg_lead, load_record
+from src.preprocessing import get_ecg_lead, load_filtered_record, load_record
 
 FIG_DIR = Path("results/figures")
 d = pd.read_pickle("data/processed/error_frame_analysed.pkl")
@@ -83,7 +82,7 @@ for row, (title, mask) in enumerate(categories):
             ax.axis("off")
             continue
         b = beats[col]
-        filtered, fs = _filtered_record(b.record)
+        filtered, fs = load_filtered_record(b.record)
         raw = raw_signal(b.record)
         lo, hi = int(b.r_peak_sample - 1.2 * fs), int(b.r_peak_sample + 1.2 * fs)
         t = (np.arange(lo, hi) - b.r_peak_sample) / fs
@@ -134,7 +133,7 @@ axes[0, 2].set_title("Distribution of the noise measure (all beats):\ntwo humps 
 noisy = d.sort_values("hf_noise_rel", ascending=False).drop_duplicates("record").head(3)
 for col, b in enumerate(noisy.itertuples()):
     ax = axes[1, col]
-    filtered, fs = _filtered_record(b.record)
+    filtered, fs = load_filtered_record(b.record)
     raw = raw_signal(b.record)
     lo, hi = int(b.r_peak_sample - 0.6 * fs), int(b.r_peak_sample + 0.8 * fs)
     t = (np.arange(lo, hi) - b.r_peak_sample) / fs
@@ -182,7 +181,7 @@ missed_v = ann[(ann.symbol == "V") & (~ann.detected)]
 picks = missed_v.groupby("record").sample(1, random_state=0).sample(7, random_state=0)
 detected_all = d.groupby("record").r_peak_sample.apply(np.array)
 for ax, b in zip(axes.flat[1:], picks.itertuples()):
-    filtered, fs = _filtered_record(b.record)
+    filtered, fs = load_filtered_record(b.record)
     lo, hi = int(b.sample - 1.0 * fs), int(b.sample + 1.0 * fs)
     t = (np.arange(lo, hi) - b.sample) / fs
     ax.plot(t, filtered[lo:hi], color="black", lw=0.9)

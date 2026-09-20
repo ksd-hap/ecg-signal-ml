@@ -1,3 +1,4 @@
+"""Scoring predictions: metrics, out-of-fold predictions, per-group tables, patient-level bootstrap."""
 import numpy as np
 import pandas as pd
 from sklearn.metrics import average_precision_score, confusion_matrix, f1_score, roc_auc_score
