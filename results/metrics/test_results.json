@@ -1,6 +1,6 @@
 {
   "protocol": {
-    "frozen_in_commit": "10c7825",
+    "frozen_in_commit": "04d36c7",
     "selected_model": "logistic regression",
     "threshold": 0.5,
     "split_file_sha256": "513cac7d6d5d7c2ee8e51047db0b869b6f78db3388d9ab16ca6790f29605e201"

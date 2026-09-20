@@ -147,7 +147,7 @@ No heavy hyperparameter search was done, by design. Class weights were tested bu
 
 <img src="results/figures/18_record_split.png" width="760" alt="Split composition">
 
-**Pre-registered decisions** (git history: `6597cdf` rules committed before results, `10c7825` freeze, `4ed07a6` final test):
+**Pre-registered decisions** (git history: `1412da9` rules committed before results, `04d36c7` freeze, `c3ea2f2` final test):
 
 - *Feature rule:* adopt the rhythm-context features only if every model that improves PR-AUC also lowers false alarms in atrial fibrillation and flutter. **Outcome: not adopted** (it helped the logistic regression: flutter false alarms 93.3% → 11.5%, but not the forest or boosting).
 - *Selection rule:* choose the highest development PR-AUC, but prefer the simpler model if its advantage is within the patient-bootstrap noise. The forest scored highest (PR-AUC 0.725), but its edge over logistic regression (+0.034, 95% interval −0.109 to +0.135) included zero, so **logistic regression was selected**.
