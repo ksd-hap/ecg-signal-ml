@@ -6,3 +6,4 @@ scikit-learn==1.9.1
 wfdb==4.3.1
 jupyterlab==4.6.3
 ipykernel==7.3.0
+pytest==9.1.1
